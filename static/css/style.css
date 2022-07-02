@@ -1,0 +1,60 @@
+@charset "UTF-8";
+
+body,
+p,
+h2,
+h3 {
+  margin: 0;
+}
+
+body,
+div,
+p,
+h2,
+h3 {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  /* scroll-behavior:smooth; */
+  scrollbar-color: transparent transparent;
+  scrollbar-track-color: transparent;
+  -ms-scrollbar-track-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #4facfa;
+}
+
+body {
+  font-family: Tahoma, Verdana, "Microsoft Yahei", sans-serif;
+}
+
+.hello {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: 80%;
+  padding-top: 30px;
+  padding-bottom: 50px;
+  margin: 0 auto;
+}
+
+.result {
+  width: 90%;
+  margin: 0 auto;
+}
+
+.title{
+  text-align: center
+}
+.title span{
+  font-size: 10px;
+}
+
+.page{
+  text-align: center;
+  margin-top: 10px;
+  padding-bottom: 20px;
+}

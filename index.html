@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>互动查询</title>
+    <!-- import CSS -->
+    <link rel="stylesheet" href="./static/css/index.css" />
+    <link rel="stylesheet" href="./static/css/style.css" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+  </head>
+
+  <body>
+    <div id="app">
+      <div class="title">
+        <h1>互动记录查询</h1>
+        <span>数据更新时间：2022年7月1日 10:00</span>
+      </div>
+      <div class="hello">
+        <el-input v-model="d_uid" placeholder="484322035"></el-input>
+        <el-input
+          v-model="d_offset"
+          placeholder=""
+          style="display: none"
+        ></el-input>
+        <el-button type="primary" @click="submit" style="margin-left: 20px"
+          >查询</el-button
+        >
+      </div>
+      <div class="result">
+        <div style="font-weight: 600; margin-bottom: 5px; margin-left: 10px">
+          共{{d_count}}条
+        </div>
+        <template>
+          <el-table :data="tableData" style="width: 100%">
+            <el-table-column prop="ctime" label="日期" min-width="50">
+            </el-table-column>
+            <el-table-column prop="type" label="来源" min-width="50">
+            </el-table-column>
+            <el-table-column prop="text" label="内容" min-width="300">
+            </el-table-column>
+          </el-table>
+        </template>
+      </div>
+      <div class="page">
+        <el-button @click="previous">上一页</el-button>
+        <el-button type="success" @click="next">下一页</el-button>
+      </div>
+    </div>
+  </body>
+  <!-- import Vue before Element -->
+  <script src="./static/js/vue@2.6.14.js"></script>
+  <script src="./static/js/composition-api@1.4.3.js"></script>
+  <script src="./static/js/axios.min.js"></script>
+
+  <!-- import JavaScript -->
+  <script src="./static/js/index.js"></script>
+  <script>
+    Vue.component("axios", axios);
+    new Vue({
+      el: "#app",
+      data: {
+        d_uid: "",
+        d_offset: 0,
+        tableData: [],
+        d_count: 0,
+      },
+      methods: {
+        submit() {
+          this.d_offset = 0;
+          this.getData(this.d_uid, this.d_offset);
+        },
+        next() {
+          this.d_offset += 51;
+          this.getData(this.d_uid, this.d_offset);
+          document.documentElement.scrollTop = 0;
+        },
+        previous() {
+          this.d_offset -= 51;
+          this.getData(this.d_uid, this.d_offset);
+          document.documentElement.scrollTop = 0;
+        },
+        getData(uid, offset) {
+          // this.DisableBtn();
+          axios
+            .get(
+              "https://cloudbase-prepaid-0ep3vhb1c36938-1256422595.ap-shanghai.app.tcloudbase.com/query?uid=" +
+                uid +
+                "&offset=" +
+                offset
+            )
+            .then((response) => {
+              console.log(response.data.content.data);
+              this.tableData = response.data.content.data;
+              arr = response.data.content.data;
+              for (var i = 0; i < arr.length; i++) {
+                if(arr[i]['type']=="0"){
+                  arr[i]['type']="视频评论"
+                }
+                if(arr[i]['type']=="1"){
+                  arr[i]['type']="视频弹幕"
+                }
+                if(arr[i]['type']=="2"){
+                  arr[i]['type']="动态评论"
+                }
+                if(arr[i]['type']=="3"){
+                  arr[i]['type']="直播"
+                }
+                if(arr[i]['type']=="4"){
+                  arr[i]['type']="SC"
+                }
+              }
+              this.tableData = arr;
+              this.d_count = response.data.info.count;
+            })
+            .catch((response) => {
+              console.log(response);
+            });
+        },
+        handleChange(file, fileList) {
+          this.fileList = fileList.slice(-3);
+          console.log(this.fileList);
+        },
+        uploadFilefunction(params) {
+          this.DisableBtn();
+          var file = params.file;
+          var formData = new FormData();
+          formData.append("file", file);
+          axios
+            .post("/upload", formData)
+            .then((res) => {
+              console.log("请求成功");
+              this.EnableBtn();
+              //请求成功是返回数据
+              if (res["data"]["code"] == 0) {
+                this.filename = res["data"]["filename"];
+                var chtext = "";
+                if (res["data"]["type"] == "edf") {
+                  for (
+                    j = 0, len = res["data"]["edf_data"]["raw_data"].length;
+                    j < len;
+                    j++
+                  ) {
+                    chtext =
+                      chtext +
+                      (j + 1) +
+                      "." +
+                      res["data"]["edf_data"]["raw_data"][j] +
+                      "<br>";
+                  }
+                  console.log(res["data"]["edf_data"]["ch_index"]);
+                  if (res["data"]["edf_data"]["ch_index"]) {
+                    chtext =
+                      chtext +
+                      "成功检测并已自动填入通道序号，请在右侧检查是否正确！";
+                  }
+                  this.ch11 =
+                    res["data"]["edf_data"]["ch_index"]["EEG-Fpz-Cz"] + 1;
+                  this.ch12 =
+                    res["data"]["edf_data"]["ch_index"]["EEG-Pz-Oz"] + 1;
+                  this.ch13 =
+                    res["data"]["edf_data"]["ch_index"]["EOG-horizontal"] + 1;
+                  this.$alert(chtext, "Channels in your file:", {
+                    confirmButtonText: "确定",
+                    dangerouslyUseHTMLString: true,
+                  });
+                } else {
+                  this.$message({
+                    showClose: true,
+                    message: "非EDF文件，请自行检查通道的序号",
+                    type: "warning",
+                    duration: 5000,
+                  });
+                }
+              } else {
+                this.$message({
+                  showClose: true,
+                  message: "出错了",
+                  type: "error",
+                  duration: 5000,
+                });
+              }
+            })
+            .catch((err) => {
+              console.log("请求失败");
+              this.$message({
+                showClose: true,
+                message: "出错了",
+                type: "error",
+                duration: 5000,
+              });
+              this.EnableBtn();
+            });
+        },
+      },
+    });
+  </script>
+</html>
